@@ -2,14 +2,14 @@ import asyncio
 
 import websockets
 
-from commons.events import EventConnectAck
+from commons.events import EventConnectAck, Event, Opcode
 from server.ConnectedClient import ConnectedClient
 
 connected_clients = {}
 
 
 async def handler(websocket):
-    client = ConnectedClient(websocket)
+    client = ConnectedClient(websocket, '')
     connected_clients[client.id] = client
     print(f'Client connected, id: {client.id}')
 
@@ -20,7 +20,14 @@ async def handler(websocket):
     while True:
         try:
             event_raw = await websocket.recv()
-            print('Received event ', event_raw)
+            event = Event.from_json(event_raw)
+
+            if event.op == Opcode.IDENTIFY:
+                # set username in connected_clients
+                connected_clients[event.id].username = event.username
+                print(f'Client identified as {event.username}')
+            else:
+                print(f'Received event {event_raw}')
 
         except websockets.ConnectionClosed:
             print(f'Client {client.id} disconnected')

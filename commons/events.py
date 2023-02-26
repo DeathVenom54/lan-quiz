@@ -20,6 +20,8 @@ class Event:
         op = data.pop('op')
         if op == Opcode.CONNECT_ACK:
             return EventConnectAck(data['id'])
+        elif op == Opcode.IDENTIFY:
+            return EventIdentify(data['id'], data['username'])
         else:
             return Event(op, data)
 
@@ -34,7 +36,7 @@ class EventDisconnect(Event):
 
     @staticmethod
     def from_json(json_data):
-        data = json.load(json_data)
+        data = json.loads(json_data)
         op = data.pop('op')
         return Event(op, data)
 
@@ -48,12 +50,26 @@ class EventConnectAck(Event):
 
     @staticmethod
     def from_json(json_data):
-        data = json.load(json_data)
+        data = json.loads(json_data)
+        op = data.pop('op')
+        return Event(op, data)
+
+class EventIdentify(Event):
+    def __init__(self, id, username):
+        self.id = id
+        self.username = username
+        super().__init__(Opcode.IDENTIFY, self.get_data())
+
+    def get_data(self):
+        return {'id': self.id, 'username': self.username}
+
+    @staticmethod
+    def from_json(json_data):
+        data = json.loads(json_data)
         op = data.pop('op')
         return Event(op, data)
 
 class Opcode:
     CONNECT_ACK = 1
     DISCONNECT = 2
-    PING = 3
-    PONG = 4
+    IDENTIFY = 3
